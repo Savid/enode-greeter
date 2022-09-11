@@ -4,6 +4,13 @@ on:
     workflows: [release]
     types:
       - completed
+    inputs:
+      name:
+        type: choice
+        description: Who to greet
+        options: 
+        - monalisa
+        - cschleiden
 
 jobs:
   build:
@@ -42,7 +49,7 @@ jobs:
           path: dist
       - uses: actions-ecosystem/action-get-latest-tag@v1
         id: get-latest-tag
-        inputs:
+        with:
           semver_only: true
       - name: Docker meta
         id: meta

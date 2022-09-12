@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Savid/enode-greeter/compare/v1.0.1...v1.1.0) (2022-09-12)
+
+
+### Features
+
+* cleanup ([4351244](https://github.com/Savid/enode-greeter/commit/4351244a8c41cf65bed5147a2ace9787a8dd8541))
+
 ## [1.0.1](https://github.com/Savid/enode-greeter/compare/v1.0.0...v1.0.1) (2022-09-11)
 
 

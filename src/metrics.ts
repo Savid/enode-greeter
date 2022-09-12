@@ -24,7 +24,7 @@ class Metrics {
     help: 'The total number of failed get requests to remote',
   });
 
-  static remoteGetEnodes = new Counter({
+  static remoteGetENodes = new Counter({
     name: 'enode_greeter_remote_get_enodes_total',
     help: 'The total number of enodes gotten from remote',
   });

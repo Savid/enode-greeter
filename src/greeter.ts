@@ -5,7 +5,7 @@ import { each } from 'async';
 import {
   REMOTE_SEND_ENDPOINT,
   REMOTE_GET_ENDPOINT,
-  REMOTE_SECRET,
+  SHARED_SECRET,
   REMOTE_SEND_INTERVAL,
   REMOTE_GET_INTERVAL,
   REMOTE_GET_COUNT,
@@ -25,6 +25,7 @@ interface Status {
     networkId: string;
     td: string;
   };
+  date: string;
 }
 
 export default class Greeter {
@@ -65,9 +66,11 @@ export default class Greeter {
                 networkId: networkId.toString(),
                 td: td.toString(),
               },
+              date: new Date().toISOString(),
             });
             Metrics.status.inc();
           } catch (error) {
+            const date = new Date().toISOString();
             if (error instanceof PeerError) {
               this.statuses.push({
                 enode,
@@ -75,6 +78,7 @@ export default class Greeter {
                   message: error.message,
                   code: error.code,
                 },
+                date,
               });
               Metrics.statusFailed.labels(error.code).inc();
             } else if (error instanceof Error) {
@@ -83,6 +87,7 @@ export default class Greeter {
                 error: {
                   message: error.message,
                 },
+                date,
               });
               Metrics.statusFailed.labels('unknown').inc();
             }
@@ -107,6 +112,7 @@ export default class Greeter {
         enodesCount: this.enodes.length,
         queueMaxLimit: QUEUE_MAX_LIMIT,
       });
+      return;
     }
     try {
       this.hydrateAbortController = new AbortController();
@@ -114,13 +120,14 @@ export default class Greeter {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          ...(REMOTE_SECRET && { Authorization: `Basic ${REMOTE_SECRET}` }),
+          ...(SHARED_SECRET && { Authorization: `Basic ${SHARED_SECRET}` }),
         },
         signal: this.hydrateAbortController?.signal,
       });
+      if (!res.ok) throw new Error(`status code ${res.status}`);
       const json = (await res.json()) as string[];
       Metrics.remoteGets.inc();
-      Metrics.remoteGetEnodes.inc(json.length);
+      Metrics.remoteGetENodes.inc(json.length);
       this.enodes.push(...json);
     } catch (error) {
       if (error instanceof Error) {
@@ -143,15 +150,16 @@ export default class Greeter {
     if (statuses.length) {
       try {
         this.sendAbortController = new AbortController();
-        await fetch(REMOTE_SEND_ENDPOINT, {
+        const res = await fetch(REMOTE_SEND_ENDPOINT, {
           method: 'post',
           body: JSON.stringify(statuses),
           headers: {
             'Content-Type': 'application/json',
-            ...(REMOTE_SECRET && { Authorization: `Basic ${REMOTE_SECRET}` }),
+            ...(SHARED_SECRET && { Authorization: `Basic ${SHARED_SECRET}` }),
           },
           signal: this.sendAbortController?.signal,
         });
+        if (!res.ok) throw new Error(`status code ${res.status}`);
         Metrics.remoteSends.inc();
         Metrics.remoteSendStatuses.inc(statuses.length);
       } catch (error) {
